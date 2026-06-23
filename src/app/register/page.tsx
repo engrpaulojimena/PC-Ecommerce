@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +38,7 @@ export default function RegisterPage() {
       {error && <div className="alert alert-error">{error}</div>}
       <form onSubmit={handleSubmit}>
         <label>Full name</label>
-        <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required autoComplete="name" />
+        <input type="text" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required autoComplete="name" />
         <label>Email</label>
         <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required autoComplete="email" />
         <label>Password</label>
