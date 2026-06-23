@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatPrice } from "@/lib/types";
 
-export default function PayPage() {
+function PayContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order_id");
@@ -92,5 +92,13 @@ export default function PayPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function PayPage() {
+  return (
+    <Suspense fallback={<div className="empty-state">Loading...</div>}>
+      <PayContent />
+    </Suspense>
   );
 }
