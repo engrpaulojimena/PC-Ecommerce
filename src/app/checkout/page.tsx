@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/types";
 
 interface CartEntry { quantity: number; name: string; price: number; stock: number; }
+
+declare global {
+  interface Window { L: any; }
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -14,6 +18,12 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [locLoading, setLocLoading] = useState(false);
+  const [locError, setLocError] = useState("");
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const leafletMapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -27,8 +37,123 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // Load Leaflet via CDN script tag (no npm install needed)
+  const loadLeaflet = (): Promise<any> => {
+    return new Promise((resolve) => {
+      if (window.L) { resolve(window.L); return; }
+
+      if (!document.getElementById("leaflet-css")) {
+        const link = document.createElement("link");
+        link.id = "leaflet-css";
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(link);
+      }
+
+      if (!document.getElementById("leaflet-js")) {
+        const script = document.createElement("script");
+        script.id = "leaflet-js";
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.onload = () => resolve(window.L);
+        document.head.appendChild(script);
+      } else {
+        // Script tag exists but still loading — poll until ready
+        const poll = setInterval(() => {
+          if (window.L) { clearInterval(poll); resolve(window.L); }
+        }, 50);
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (!mapCoords || !mapRef.current) return;
+
+    loadLeaflet().then((L) => {
+      if (!L || !mapRef.current) return;
+
+      // Fix marker icon paths broken by bundlers
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      });
+
+      if (!leafletMapRef.current) {
+        leafletMapRef.current = L.map(mapRef.current).setView([mapCoords.lat, mapCoords.lng], 16);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+        }).addTo(leafletMapRef.current);
+        markerRef.current = L.marker([mapCoords.lat, mapCoords.lng], { draggable: true }).addTo(leafletMapRef.current);
+
+        markerRef.current.on("dragend", async () => {
+          const pos = markerRef.current.getLatLng();
+          setMapCoords({ lat: pos.lat, lng: pos.lng });
+          setLocLoading(true);
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${pos.lat}&lon=${pos.lng}&format=json`
+            );
+            const data = await res.json();
+            setForm((f) => ({
+              ...f,
+              address: data?.display_name || `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`,
+            }));
+          } catch {
+            setForm((f) => ({ ...f, address: `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}` }));
+          } finally {
+            setLocLoading(false);
+          }
+        });
+
+        // Also allow dragging by tapping/clicking anywhere on the map
+        leafletMapRef.current.on("click", (e: any) => {
+          markerRef.current.setLatLng(e.latlng);
+          markerRef.current.fire("dragend");
+        });
+      } else {
+        leafletMapRef.current.setView([mapCoords.lat, mapCoords.lng], 16);
+        markerRef.current.setLatLng([mapCoords.lat, mapCoords.lng]);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapCoords]);
+
   const items = Object.entries(cart).filter(([, v]) => v.quantity > 0);
   const subtotal = items.reduce((sum, [, v]) => sum + v.price * v.quantity, 0);
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocLoading(true);
+    setLocError("");
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setMapCoords({ lat: latitude, lng: longitude });
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await res.json();
+          setForm((f) => ({ ...f, address: data?.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` }));
+        } catch {
+          setForm((f) => ({ ...f, address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` }));
+        }
+        setLocLoading(false);
+      },
+      (err) => {
+        setLocLoading(false);
+        setLocError(
+          err.code === err.PERMISSION_DENIED
+            ? "Location access was denied. Please allow location permissions and try again."
+            : "Unable to retrieve your location. Please enter your address manually."
+        );
+      }
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +174,15 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create order");
-      router.push(`/pay?order_id=${data.orderId}`);
+
+      if (form.payment_method === "cod") {
+        localStorage.removeItem("pcforge_cart");
+        await fetch("/api/cart", { method: "DELETE" }).catch(() => {});
+        window.dispatchEvent(new Event("cartUpdated"));
+        router.push(`/order-success?order_id=${data.orderId}`);
+      } else {
+        router.push(`/pay?order_id=${data.orderId}`);
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -69,6 +202,7 @@ export default function CheckoutPage() {
     { value: "gcash", label: "GCash", icon: "📱" },
     { value: "paypal", label: "PayPal", icon: "🅿️" },
     { value: "card", label: "Credit / Debit Card", icon: "💳" },
+    { value: "cod", label: "Cash on Delivery", icon: "💵" },
   ];
 
   return (
@@ -110,8 +244,36 @@ export default function CheckoutPage() {
             <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             <label>Email</label>
             <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-            <label>Delivery address</label>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label style={{ margin: 0 }}>Delivery address</label>
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                disabled={locLoading}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  fontSize: "0.75rem", color: "var(--accent)", background: "none",
+                  border: "none", cursor: locLoading ? "not-allowed" : "pointer",
+                  padding: "2px 0", opacity: locLoading ? 0.6 : 1,
+                }}
+              >
+                {locLoading ? <>⏳ Getting location...</> : <>📍 Use current location</>}
+              </button>
+            </div>
+            {locError && (
+              <div style={{ fontSize: "0.75rem", color: "var(--danger, #e74c3c)", marginBottom: 6 }}>{locError}</div>
+            )}
             <textarea rows={3} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required placeholder="House/Unit no., Street, City, Province, ZIP" />
+
+            {mapCoords && (
+              <div style={{ marginTop: 12, borderRadius: "var(--radius)", overflow: "hidden", border: "1px solid var(--border)" }}>
+                <div ref={mapRef} style={{ height: 220, width: "100%", background: "var(--bg-3)" }} />
+                <div style={{ padding: "6px 10px", fontSize: "0.72rem", color: "var(--text-muted)", background: "var(--bg-2)" }}>
+                  📍 Drag the pin or tap the map to fine-tune your exact location.
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: 28 }}>
@@ -127,12 +289,18 @@ export default function CheckoutPage() {
               ))}
             </div>
             <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 10 }}>
-              Sandbox / demo gateway — no real charges are made.
+              {form.payment_method === "cod"
+                ? "Pay with cash when your order arrives at your doorstep."
+                : "Sandbox / demo gateway — no real charges are made."}
             </p>
           </div>
 
           <button type="submit" className="btn btn-primary btn-block btn-lg" style={{ marginTop: 20 }} disabled={loading}>
-            {loading ? "Placing order..." : `Place order — ${formatPrice(subtotal)}`}
+            {loading
+              ? "Placing order..."
+              : form.payment_method === "cod"
+              ? `Place order — ${formatPrice(subtotal)} (Pay on delivery)`
+              : `Place order — ${formatPrice(subtotal)}`}
           </button>
         </form>
 

@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
-    // Create order
+    const isCOD = payment_method === "cod";
+
+    // Create order — COD orders start as confirmed (payment collected on delivery)
     const [order] = await sql`
       INSERT INTO orders (user_id, guest_name, guest_email, guest_address, total_amount, payment_method, payment_status, order_status)
       VALUES (
@@ -21,7 +23,7 @@ export async function POST(req: NextRequest) {
         ${address},
         ${totalAmount},
         ${payment_method},
-        'pending',
+        ${isCOD ? "pending_cod" : "pending"},
         'processing'
       )
       RETURNING id
@@ -33,6 +35,18 @@ export async function POST(req: NextRequest) {
         INSERT INTO order_items (order_id, product_id, product_name, price, quantity)
         VALUES (${order.id}, ${item.productId}, ${item.name}, ${item.price}, ${item.quantity})
       `;
+    }
+
+    // For COD, deduct stock immediately since no payment gateway step
+    if (isCOD) {
+      for (const item of items) {
+        if (item.productId) {
+          await sql`
+            UPDATE products SET stock = GREATEST(0, stock - ${item.quantity})
+            WHERE id = ${item.productId}
+          `;
+        }
+      }
     }
 
     return NextResponse.json({ orderId: order.id });

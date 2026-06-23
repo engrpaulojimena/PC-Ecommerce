@@ -22,12 +22,10 @@ export default function Header() {
   };
 
   useEffect(() => {
-    // Read saved theme
     const saved = (localStorage.getItem("pcforge_theme") || "dark") as "dark" | "light";
     setTheme(saved);
     document.documentElement.setAttribute("data-theme", saved);
 
-    // Read saved user
     try {
       const raw = localStorage.getItem("pcforge_user");
       if (raw) setUser(JSON.parse(raw));
@@ -41,6 +39,7 @@ export default function Header() {
         const raw = localStorage.getItem("pcforge_user");
         setUser(raw ? JSON.parse(raw) : null);
       } catch { setUser(null); }
+      refreshCart();
     };
 
     window.addEventListener("cartUpdated", onCart);
@@ -61,8 +60,11 @@ export default function Header() {
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("pcforge_user");
+    localStorage.removeItem("pcforge_cart");
     setUser(null);
+    setCartCount(0);
     window.dispatchEvent(new Event("userUpdated"));
+    window.dispatchEvent(new Event("cartUpdated"));
     window.location.href = "/";
   };
 
@@ -77,14 +79,17 @@ export default function Header() {
         <div className="header-bar">
           <Link href="/" className="brand">
             <div className="brand-icon">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.9"/>
-                <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/>
-                <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/>
-                <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.9"/>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="1" y="1" width="7" height="7" rx="2" fill="white"/>
+                <rect x="10" y="1" width="7" height="7" rx="2" fill="white" opacity="0.5"/>
+                <rect x="1" y="10" width="7" height="7" rx="2" fill="white" opacity="0.5"/>
+                <rect x="10" y="10" width="7" height="7" rx="2" fill="white"/>
               </svg>
             </div>
-            PCFORGE
+            <span className="brand-text">
+              <span>PCJ PC</span>
+              <span className="dot">.</span>
+            </span>
           </Link>
 
           <nav className="nav-links">
@@ -96,29 +101,19 @@ export default function Header() {
           </nav>
 
           <div className="header-right">
-            {user && (
-              <span className="nav-user">Hi, {user.name.split(" ")[0]}</span>
-            )}
-
-            <button
-              className="theme-toggle"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
+            {user && <span className="nav-user">Hi, {user.name.split(" ")[0]}</span>}
+            <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme" title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
               {theme === "dark" ? "🌙" : "☀️"}
             </button>
-
             <Link href="/cart" className="cart-pill">
-              <svg width="13" height="13" fill="none" viewBox="0 0 16 16">
-                <path d="M2 2h1.5l2 8h6.5l1.5-5H5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg width="14" height="14" fill="none" viewBox="0 0 16 16">
+                <path d="M2 2h1.5l2 8h6.5l1.5-5H5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <circle cx="8" cy="13" r="1" fill="currentColor"/>
                 <circle cx="11.5" cy="13" r="1" fill="currentColor"/>
               </svg>
               Cart
               {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
             </Link>
-
             {user ? (
               <button onClick={handleLogout} className="btn-logout">Sign out</button>
             ) : (

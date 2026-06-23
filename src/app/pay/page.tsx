@@ -51,6 +51,7 @@ function PayContent() {
     const data = await res.json();
     if (decision === "pay" && data.success) {
       localStorage.removeItem("pcforge_cart");
+      await fetch("/api/cart", { method: "DELETE" }).catch(() => {});
       window.dispatchEvent(new Event("cartUpdated"));
       router.push(`/order-success?order_id=${orderId}`);
     } else {

@@ -15,13 +15,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
-    const { name, description, price, stock, category_id } = await req.json();
+    const { name, description, price, stock, category_id, image } = await req.json();
     if (!name || price <= 0) {
       return NextResponse.json({ error: "Invalid name or price." }, { status: 400 });
     }
+    const imageVal = image || "no-image.png";
     const [product] = await sql`
       INSERT INTO products (name, description, price, stock, category_id, image)
-      VALUES (${name}, ${description ?? null}, ${price}, ${stock ?? 0}, ${category_id ?? null}, 'no-image.png')
+      VALUES (${name}, ${description ?? null}, ${price}, ${stock ?? 0}, ${category_id ?? null}, ${imageVal})
       RETURNING *
     `;
     return NextResponse.json({ product });

@@ -22,6 +22,8 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
+      // Discard any leftover cart from a previously logged-in account on this browser
+      localStorage.removeItem("pcforge_cart");
       localStorage.setItem("pcforge_user", JSON.stringify(data.user));
       window.dispatchEvent(new Event("userUpdated"));
       router.push("/");

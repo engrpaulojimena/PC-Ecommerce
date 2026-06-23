@@ -45,6 +45,16 @@ CREATE TABLE IF NOT EXISTS orders (
     created_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Cart items (persists logged-in users' carts in the DB)
+CREATE TABLE IF NOT EXISTS cart_items (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    product_id  INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    quantity    INTEGER NOT NULL DEFAULT 1,
+    updated_at  TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, product_id)
+);
+
 -- Order items
 CREATE TABLE IF NOT EXISTS order_items (
     id           SERIAL PRIMARY KEY,

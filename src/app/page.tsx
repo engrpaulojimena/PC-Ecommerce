@@ -19,8 +19,15 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 function getCategoryIcon(name: string) {
-  const key = name?.toLowerCase() ?? "default";
-  return CATEGORY_ICONS[key] ?? CATEGORY_ICONS.default;
+  const lower = name?.toLowerCase() ?? "";
+  if (lower.includes("cpu") || lower.includes("processor")) return CATEGORY_ICONS.cpu;
+  if (lower.includes("gpu") || lower.includes("graphic")) return CATEGORY_ICONS.gpu;
+  if (lower.includes("ram") || lower.includes("memory")) return CATEGORY_ICONS.ram;
+  if (lower.includes("storage") || lower.includes("ssd") || lower.includes("hdd")) return CATEGORY_ICONS.storage;
+  if (lower.includes("psu") || lower.includes("power")) return CATEGORY_ICONS.psu;
+  if (lower.includes("case") || lower.includes("chassis")) return CATEGORY_ICONS.case;
+  if (lower.includes("cool") || lower.includes("fan")) return CATEGORY_ICONS.cooling;
+  return CATEGORY_ICONS.default;
 }
 
 export default async function ShopPage({ searchParams }: Props) {
@@ -61,18 +68,21 @@ export default async function ShopPage({ searchParams }: Props) {
     return { cls: "card-badge badge-instock", label: "In stock" };
   }
 
+  const hasImage = (img: string | null | undefined) =>
+    img && img !== "no-image.png" && img.length > 20;
+
   return (
     <>
       <div className="page-hero">
         <div className="hero-row">
           <div>
-            <div className="page-hero-eyebrow">// PC components store</div>
-            <h1>Build your <span className="accent">next rig.</span></h1>
-            <p>Browse parts, compare specs, check out fast.</p>
+            <div className="page-hero-eyebrow">PCJ PC Store</div>
+            <h1>Build your <span className="accent">dream rig.</span></h1>
+            <p>Browse the best PC parts, check specs, and checkout fast.</p>
           </div>
           <form method="get" className="search-bar">
             <input type="text" name="q" placeholder="Search components..." defaultValue={search} />
-            <button type="submit">SEARCH</button>
+            <button type="submit">Search</button>
           </form>
         </div>
       </div>
@@ -92,7 +102,7 @@ export default async function ShopPage({ searchParams }: Props) {
             </Link>
           ))}
         </div>
-        <div className="tab-count">{products.length} ITEMS</div>
+        <div className="tab-count">{products.length} items</div>
       </div>
 
       {products.length === 0 ? (
@@ -106,22 +116,29 @@ export default async function ShopPage({ searchParams }: Props) {
         <div className="grid">
           {products.map((p) => {
             const badge = stockBadge(p.stock);
+            const imgSrc = hasImage(p.image) ? p.image : null;
             return (
               <div key={p.id} className="card">
-                <div className="card-img">
-                  <div className="card-img-placeholder">
-                    <svg width="44" height="44" viewBox="0 0 40 40" fill="none" color="#3898ff"
-                      dangerouslySetInnerHTML={{ __html: getCategoryIcon(p.category_name ?? "") }} />
-                    <span>{p.category_name ?? "Part"}</span>
+                <Link href={`/product/${p.id}`} style={{ textDecoration: "none" }}>
+                  <div className="card-img">
+                    {imgSrc ? (
+                      <img src={imgSrc} alt={p.name} />
+                    ) : (
+                      <div className="card-img-placeholder">
+                        <svg width="48" height="48" viewBox="0 0 40 40" fill="none" color="currentColor"
+                          dangerouslySetInnerHTML={{ __html: getCategoryIcon(p.category_name ?? "") }} />
+                        <span>{p.category_name ?? "Part"}</span>
+                      </div>
+                    )}
+                    <span className={badge.cls}>{badge.label}</span>
                   </div>
-                  <span className={badge.cls}>{badge.label}</span>
-                </div>
+                </Link>
                 <div className="card-body">
                   <div className="card-cat">{p.category_name ?? "Uncategorized"}</div>
                   <div className="card-name">{p.name}</div>
                   <div className="card-price">{formatPrice(p.price)}</div>
                   <div className={`card-stock ${p.stock <= 5 && p.stock > 0 ? "warn" : ""}`}>
-                    {p.stock > 0 ? `${p.stock} units in stock` : ""}
+                    {p.stock > 0 ? `${p.stock} units available` : ""}
                   </div>
                   <div className="card-actions">
                     <Link href={`/product/${p.id}`} className="btn btn-sm">View</Link>

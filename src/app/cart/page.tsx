@@ -1,26 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/types";
-
-interface CartEntry { quantity: number; name: string; price: number; stock: number; }
-type Cart = Record<string, CartEntry>;
+import { getLocalCart, setLocalCart, syncCartToDB, CartMap } from "@/lib/cart";
 
 export default function CartPage() {
-  const [cart, setCart] = useState<Cart>({});
+  const [cart, setCart] = useState<CartMap>({});
   const [mounted, setMounted] = useState(false);
+  const isLoggedIn = useRef(false);
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    const data = localStorage.getItem("pcforge_cart");
-    if (data) setCart(JSON.parse(data));
+    const userData = localStorage.getItem("pcforge_user");
+    isLoggedIn.current = !!userData;
+    setCart(getLocalCart());
   }, []);
 
-  const saveCart = (updated: Cart) => {
-    localStorage.setItem("pcforge_cart", JSON.stringify(updated));
+  const saveCart = (updated: CartMap) => {
+    setLocalCart(updated);
     setCart(updated);
-    window.dispatchEvent(new Event("cartUpdated"));
+
+    // Debounce DB sync — wait 800ms after last change
+    if (isLoggedIn.current) {
+      if (syncTimer.current) clearTimeout(syncTimer.current);
+      syncTimer.current = setTimeout(() => syncCartToDB(updated), 800);
+    }
   };
 
   const updateQty = (id: string, qty: number) => {

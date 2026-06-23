@@ -3,7 +3,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "PCForge — PC Components Store",
+  title: "PCJ PC — PC Components Store",
   description: "Build your dream rig with premium PC components.",
 };
 
@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <footer className="site-footer">
-          &copy; 2025 PCFORGE — All rights reserved
+          &copy; 2025 PCJ PC — All rights reserved
         </footer>
       </body>
     </html>
