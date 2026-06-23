@@ -7,10 +7,13 @@ interface Category { id: number; name: string; }
 interface Product {
   id?: number;
   name?: string;
-  description?: string;
+  description?: string | null;
   price?: number;
   stock?: number;
   category_id?: number | null;
+  image?: string | null;
+  created_at?: string;
+  category_name?: string | null;
 }
 
 interface Props {
