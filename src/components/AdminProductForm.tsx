@@ -2,23 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-interface Category { id: number; name: string; }
-interface Product {
-  id?: number;
-  name?: string;
-  description?: string | null;
-  price?: number;
-  stock?: number;
-  category_id?: number | null;
-  image?: string | null;
-  created_at?: string;
-  category_name?: string | null;
-}
+import type { Product, Category } from "@/lib/types";
 
 interface Props {
   categories: Category[];
-  product?: Product;
+  product?: Partial<Product>;
 }
 
 export default function AdminProductForm({ categories, product }: Props) {
