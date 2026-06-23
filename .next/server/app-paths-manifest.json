@@ -1,8 +1,6 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
-  "/login/page": "app/login/page.js",
-  "/register/page": "app/register/page.js",
-  "/api/auth/register/route": "app/api/auth/register/route.js",
-  "/cart/page": "app/cart/page.js"
+  "/product/[id]/page": "app/product/[id]/page.js",
+  "/cart/page": "app/cart/page.js",
+  "/login/page": "app/login/page.js"
 }
