@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Product, Category } from "@/lib/types";
+import LoadingScreen from "@/components/LoadingScreen";
 
 interface Props {
   categories: Category[];
@@ -54,7 +55,7 @@ export default function AdminProductForm({ categories, product }: Props) {
         name: form.name,
         description: form.description || null,
         price: parseFloat(form.price),
-        stock: parseInt(form.stock),
+        stock: form.stock === "" ? 0 : parseInt(form.stock, 10),
         category_id: form.category_id ? parseInt(form.category_id) : null,
         image: imageUrl || "no-image.png",
       };
@@ -78,6 +79,12 @@ export default function AdminProductForm({ categories, product }: Props) {
 
   return (
     <div className="admin-form-wrapper">
+      {(loading || imageLoading) && (
+        <LoadingScreen
+          message={imageLoading ? "Uploading image" : isEdit ? "Saving changes" : "Adding product"}
+          fullScreen
+        />
+      )}
       <div className="admin-form-header">
         <div className="admin-form-eyebrow">// admin panel</div>
         <h1>{isEdit ? "Edit Product" : "Add New Product"}</h1>

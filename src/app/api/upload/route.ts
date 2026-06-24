@@ -16,11 +16,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File too large. Max 5MB." }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const base64 = Buffer.from(bytes).toString("base64");
-    const dataUrl = `data:${file.type};base64,${base64}`;
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
 
-    return NextResponse.json({ url: dataUrl });
+    if (!cloudName || !uploadPreset) {
+      return NextResponse.json({ error: "Cloudinary not configured. Add CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET to .env.local" }, { status: 500 });
+    }
+
+    // Upload to Cloudinary via unsigned upload preset
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", uploadPreset);
+    fd.append("folder", "pcjecom");
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: "POST",
+      body: fd,
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      return NextResponse.json({ error: data.error?.message ?? "Cloudinary upload failed" }, { status: 500 });
+    }
+
+    return NextResponse.json({ url: data.secure_url });
   } catch (err) {
     const msg = (err as Error).message;
     if (msg === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

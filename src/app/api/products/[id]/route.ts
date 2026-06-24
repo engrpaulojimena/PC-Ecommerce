@@ -15,11 +15,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (!name || price <= 0) {
       return NextResponse.json({ error: "Invalid name or price." }, { status: 400 });
     }
+    // Fix: explicitly coerce stock to integer, defaulting to 0 only if null/undefined/NaN
+    const stockValue = (stock !== null && stock !== undefined && !isNaN(Number(stock)))
+      ? Math.max(0, Math.floor(Number(stock)))
+      : 0;
     if (image !== undefined) {
       await sql`
         UPDATE products
         SET name = ${name}, description = ${description ?? null},
-            price = ${price}, stock = ${stock ?? 0}, category_id = ${category_id ?? null},
+            price = ${price}, stock = ${stockValue}, category_id = ${category_id ?? null},
             image = ${image || "no-image.png"}
         WHERE id = ${params.id}
       `;
@@ -27,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       await sql`
         UPDATE products
         SET name = ${name}, description = ${description ?? null},
-            price = ${price}, stock = ${stock ?? 0}, category_id = ${category_id ?? null}
+            price = ${price}, stock = ${stockValue}, category_id = ${category_id ?? null}
         WHERE id = ${params.id}
       `;
     }

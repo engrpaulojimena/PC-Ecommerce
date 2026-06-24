@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import { formatPrice } from "@/lib/types";
+import CloudinaryMigrate from "@/components/CloudinaryMigrate";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +14,17 @@ export default async function AdminDashboard() {
   const lowStock = await sql`SELECT * FROM products WHERE stock <= 5 ORDER BY stock ASC`;
   const recentOrders = await sql`SELECT * FROM orders ORDER BY created_at DESC LIMIT 5`;
 
+  // Count products still using base64 images
+  const [{ count: base64Count }] = await sql`
+    SELECT COUNT(*)::int AS count FROM products WHERE image LIKE 'data:%'
+  `;
+
   return (
     <>
       <h1 style={{ fontFamily: "var(--font-display)" }}>Dashboard</h1>
+
+      {/* Cloudinary migration banner — shows only if there are base64 images */}
+      <CloudinaryMigrate base64Count={base64Count} />
 
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
         <div className="card">

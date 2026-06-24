@@ -24,6 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className="admin-label">ADMIN</span>
           <Link href="/admin/dashboard" className={`tab-item ${isActive("/admin/dashboard")}`}>Dashboard</Link>
           <Link href="/admin/products" className={`tab-item ${isActive("/admin/products")}`}>Products</Link>
+          <Link href="/admin/categories" className={`tab-item ${isActive("/admin/categories")}`}>Categories</Link>
           <Link href="/admin/orders" className={`tab-item ${isActive("/admin/orders")}`}>Orders</Link>
           <Link href="/" className="tab-item" style={{ marginLeft: "auto" }}>← Shop</Link>
         </div>

@@ -33,93 +33,158 @@ export default async function ProductPage({ params }: { params: { id: string } }
 
   return (
     <>
-      <Link href="/" style={{
-        color: "var(--text-dim)", fontSize: "0.8rem", display: "inline-flex", alignItems: "center",
-        gap: 6, marginBottom: 28, fontFamily: "var(--font-mono)", letterSpacing: "0.5px",
-        transition: "color 0.16s ease",
-      }}>
-        ← Back to shop
-      </Link>
+      {/* Breadcrumb */}
+      <nav style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 28, fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--text-dim)" }}>
+        <Link href="/" style={{ color: "var(--text-dim)", transition: "color 0.16s" }}>Shop</Link>
+        <span style={{ opacity: 0.4 }}>/</span>
+        {product.category_name && (
+          <>
+            <span style={{ color: "var(--text-dim)" }}>{product.category_name}</span>
+            <span style={{ opacity: 0.4 }}>/</span>
+          </>
+        )}
+        <span style={{ color: "var(--text)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240 }}>
+          {product.name}
+        </span>
+      </nav>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 420px) 1fr", gap: 48, marginBottom: 64 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 440px) 1fr", gap: 48, marginBottom: 64, alignItems: "start" }}>
         {/* Product Image */}
-        <div style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-xl)",
-          height: 380,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          position: "relative",
-        }}>
-          {hasImage(product.image) ? (
-            <img src={product.image!} alt={product.name}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, opacity: 0.12 }}>
-              <svg width="72" height="72" viewBox="0 0 40 40" fill="none" stroke="currentColor">
-                <rect x="5" y="5" width="30" height="30" rx="3" strokeWidth="1.5"/>
-                <circle cx="20" cy="18" r="5" strokeWidth="1.5"/>
-                <path d="M5 30 L12 22 L18 28 L24 21 L35 32" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.6rem", letterSpacing: "3px", color: "var(--text)" }}>
-                NO IMAGE
-              </span>
-            </div>
-          )}
+        <div style={{ position: "sticky", top: 88 }}>
+          <div style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-xl)",
+            aspectRatio: "1 / 1",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            position: "relative",
+          }}>
+            {hasImage(product.image) ? (
+              <img src={product.image!} alt={product.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, opacity: 0.12 }}>
+                <svg width="72" height="72" viewBox="0 0 40 40" fill="none" stroke="currentColor">
+                  <rect x="5" y="5" width="30" height="30" rx="3" strokeWidth="1.5"/>
+                  <circle cx="20" cy="18" r="5" strokeWidth="1.5"/>
+                  <path d="M5 30 L12 22 L18 28 L24 21 L35 32" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.6rem", letterSpacing: "3px", color: "var(--text)" }}>
+                  NO IMAGE
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Product Info */}
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          <div style={{
-            fontFamily: "var(--font-mono)", fontSize: "0.6rem", letterSpacing: "2.5px",
-            color: "var(--accent)", textTransform: "uppercase", marginBottom: 10, opacity: 0.8,
-          }}>
-            {product.category_name ?? "Uncategorized"}
-          </div>
+          {/* Category pill */}
+          {product.category_name && (
+            <span style={{
+              display: "inline-flex", alignSelf: "flex-start",
+              background: "var(--accent-dim)", border: "1px solid var(--accent-border)",
+              color: "var(--accent)", borderRadius: 99,
+              fontFamily: "var(--font-mono)", fontSize: "0.6rem", letterSpacing: "1.5px",
+              textTransform: "uppercase", padding: "4px 12px", marginBottom: 16,
+            }}>
+              {product.category_name}
+            </span>
+          )}
 
           <h1 style={{
-            fontFamily: "var(--font-display)", fontSize: "1.8rem", fontWeight: 800,
-            color: "#fff", marginBottom: 16, lineHeight: 1.15, letterSpacing: "-0.5px",
+            fontFamily: "var(--font-display)", fontSize: "1.9rem", fontWeight: 800,
+            color: "var(--text)", marginBottom: 16, lineHeight: 1.15, letterSpacing: "-0.5px",
           }}>
             {product.name}
           </h1>
 
+          {/* Price */}
           <div style={{
-            fontFamily: "var(--font-display)", fontSize: "2.2rem", fontWeight: 800,
-            color: "var(--accent)", marginBottom: 8, letterSpacing: "-1px",
+            fontFamily: "var(--font-display)", fontSize: "2.4rem", fontWeight: 800,
+            color: "var(--accent)", marginBottom: 4, letterSpacing: "-1.5px",
           }}>
             {formatPrice(product.price)}
           </div>
 
+          {/* Stock indicator */}
           <div style={{
-            fontSize: "0.8rem", color: stockColor, marginBottom: 24,
-            display: "flex", alignItems: "center", gap: 8,
-            fontFamily: "var(--font-mono)",
+            display: "inline-flex", alignItems: "center", gap: 7,
+            fontSize: "0.78rem", color: stockColor, marginBottom: 28,
+            fontFamily: "var(--font-mono)", letterSpacing: "0.5px",
           }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: stockColor, display: "inline-block", flexShrink: 0 }} />
+            <span style={{
+              width: 7, height: 7, borderRadius: "50%", background: stockColor,
+              display: "inline-block", flexShrink: 0,
+              boxShadow: product.stock > 0 ? `0 0 8px ${stockColor}` : "none",
+            }} />
             {stockLabel}
           </div>
 
+          {/* Divider */}
+          <div style={{ height: 1, background: "var(--border)", marginBottom: 24 }} />
+
+          {/* Description */}
           {product.description && (
             <p style={{
-              color: "var(--text-dim)", lineHeight: 1.75, maxWidth: 540, marginBottom: 32,
-              fontSize: "0.92rem", borderLeft: "2px solid var(--accent-border)",
-              paddingLeft: 16, borderRadius: 2,
+              color: "var(--text-dim)", lineHeight: 1.8, maxWidth: 520, marginBottom: 28,
+              fontSize: "0.93rem",
             }}>
               {product.description}
             </p>
           )}
 
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginTop: "auto" }}>
+          {/* Specs strip */}
+          <div style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-md)",
+            padding: "14px 18px",
+            marginBottom: 28,
+            display: "flex", gap: 24, flexWrap: "wrap",
+          }}>
+            <div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.58rem", letterSpacing: "2px", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 4 }}>SKU</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text)", fontWeight: 600 }}>PCJ-{String(product.id).padStart(4, "0")}</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.58rem", letterSpacing: "2px", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 4 }}>Category</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text)", fontWeight: 600 }}>{product.category_name ?? "—"}</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.58rem", letterSpacing: "2px", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 4 }}>Stock</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: stockColor, fontWeight: 600 }}>{product.stock} units</div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             {product.stock > 0 ? (
               <AddToCartButton productId={product.id} name={product.name} price={product.price} stock={product.stock} />
             ) : (
-              <button className="btn btn-lg" disabled>Out of stock</button>
+              <button className="btn btn-lg" disabled style={{ opacity: 0.5 }}>Out of stock</button>
             )}
             <Link href="/cart" className="btn btn-lg">View cart →</Link>
+          </div>
+
+          {/* Guarantees */}
+          <div style={{ display: "flex", gap: 16, marginTop: 24, flexWrap: "wrap" }}>
+            {[
+              { icon: "🛡️", label: "Authentic products" },
+              { icon: "📦", label: "Fast shipping" },
+              { icon: "🔧", label: "Tech support" },
+            ].map((g) => (
+              <div key={g.label} style={{
+                display: "flex", alignItems: "center", gap: 7,
+                fontSize: "0.75rem", color: "var(--text-dim)",
+                fontFamily: "var(--font-mono)",
+              }}>
+                <span>{g.icon}</span> {g.label}
+              </div>
+            ))}
           </div>
         </div>
       </div>

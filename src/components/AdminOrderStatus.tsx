@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function AdminOrderStatus({
   orderId,
@@ -37,6 +38,7 @@ export default function AdminOrderStatus({
 
   return (
     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      {saving && <LoadingScreen message="Updating order" fullScreen />}
       <select value={status} onChange={(e) => { setStatus(e.target.value); setSaved(false); }}>
         {["processing", "shipped", "completed", "cancelled"].map((s) => (
           <option key={s} value={s}>
