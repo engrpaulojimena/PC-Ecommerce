@@ -1,5 +1,8 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 import type { Metadata } from "next";
-import "./globals.css";
 import Header from "@/components/Header";
 
 export const metadata: Metadata = {
