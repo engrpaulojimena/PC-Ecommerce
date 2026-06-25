@@ -72,8 +72,8 @@ export default function AdminProductForm({ categories, product }: Props) {
       if (!res.ok) throw new Error(data.error || "Failed to save product");
 
       // refresh() first so the server component re-fetches before we arrive
-   router.push("/admin/products");
-  router.refresh();
+   router.replace("/admin/products");
+   router.refresh();
 
     } catch (err) {
       setError((err as Error).message);

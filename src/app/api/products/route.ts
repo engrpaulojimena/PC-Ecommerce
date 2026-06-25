@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
       RETURNING *
     `;
     // Invalidate the admin products page cache so next visit is fresh
+    revalidatePath("/");
     revalidatePath("/admin/products");
     return NextResponse.json({ product });
   } catch (err) {

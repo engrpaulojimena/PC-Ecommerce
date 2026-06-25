@@ -1,7 +1,5 @@
 "use client";
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -37,6 +35,10 @@ export default function CheckoutPage() {
       const u = JSON.parse(userData);
       setUser(u);
       setForm((f) => ({ ...f, name: u.name, email: u.email }));
+    } else {
+      // Not logged in — redirect to login with return URL
+      router.push("/login?redirect=/checkout");
+      return;
     }
   }, []);
 

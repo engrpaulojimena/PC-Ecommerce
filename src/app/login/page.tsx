@@ -1,15 +1,14 @@
 "use client";
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { loadCartFromDB, setLocalCart, syncCartToDB, getLocalCart } from "@/lib/cart";
+import { loadCartFromDB, setLocalCart, syncCartToDB } from "@/lib/cart";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,9 +26,6 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
 
-      // If a different (or any) account was previously logged in on this browser,
-      // the leftover localStorage cart belongs to THAT account, not a guest cart —
-      // discard it so it doesn't leak into this user's cart.
       const previousUserRaw = localStorage.getItem("pcforge_user");
       const previousUser = previousUserRaw ? JSON.parse(previousUserRaw) : null;
       if (previousUser && previousUser.email !== data.user.email) {
@@ -38,7 +34,6 @@ export default function LoginPage() {
 
       localStorage.setItem("pcforge_user", JSON.stringify(data.user));
 
-      // Merge guest cart with DB cart, save merged result back to DB
       const mergedCart = await loadCartFromDB();
       setLocalCart(mergedCart);
       await syncCartToDB(mergedCart);
@@ -46,7 +41,15 @@ export default function LoginPage() {
       window.dispatchEvent(new Event("userUpdated"));
       window.dispatchEvent(new Event("cartUpdated"));
 
-      router.push(data.user.role === "admin" ? "/admin/dashboard" : "/");
+      // refresh() first so Server Components re-fetch before we arrive
+      router.refresh();
+
+      const redirect = searchParams.get("redirect");
+      if (redirect) {
+        router.push(redirect);
+      } else {
+        router.push(data.user.role === "admin" ? "/admin/dashboard" : "/");
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
