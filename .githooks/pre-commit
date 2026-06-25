@@ -1,0 +1,17 @@
+#!/bin/sh
+# Pre-commit hook: ensure globals.css is imported in layout.tsx
+
+LAYOUT="src/app/layout.tsx"
+
+if ! grep -q 'import "./globals.css"' "$LAYOUT"; then
+  echo ""
+  echo "❌  COMMIT BLOCKED: globals.css import is missing from $LAYOUT"
+  echo ""
+  echo "    Add this line at the top of $LAYOUT:"
+  echo '    import "./globals.css";'
+  echo ""
+  exit 1
+fi
+
+echo "✅  globals.css import check passed."
+exit 0
