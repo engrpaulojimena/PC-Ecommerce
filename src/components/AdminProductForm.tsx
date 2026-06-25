@@ -22,7 +22,9 @@ export default function AdminProductForm({ categories, product }: Props) {
     stock: product?.stock?.toString() ?? "0",
     category_id: product?.category_id?.toString() ?? "",
   });
-  const [imageUrl, setImageUrl] = useState<string>(product?.image && product.image !== "no-image.png" ? product.image : "");
+  const [imageUrl, setImageUrl] = useState<string>(
+    product?.image && product.image !== "no-image.png" ? product.image : ""
+  );
   const [imageLoading, setImageLoading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,8 +70,11 @@ export default function AdminProductForm({ categories, product }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save product");
-      router.push("/admin/products");
-      router.refresh();
+
+      // refresh() first so the server component re-fetches before we arrive
+   router.push("/admin/products");
+  router.refresh();
+
     } catch (err) {
       setError((err as Error).message);
     } finally {

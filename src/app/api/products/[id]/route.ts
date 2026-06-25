@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const [product] = await sql`SELECT * FROM products WHERE id = ${params.id}`;
@@ -15,7 +16,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (!name || price <= 0) {
       return NextResponse.json({ error: "Invalid name or price." }, { status: 400 });
     }
-    // Fix: explicitly coerce stock to integer, defaulting to 0 only if null/undefined/NaN
     const stockValue = (stock !== null && stock !== undefined && !isNaN(Number(stock)))
       ? Math.max(0, Math.floor(Number(stock)))
       : 0;
@@ -35,6 +35,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         WHERE id = ${params.id}
       `;
     }
+    // Invalidate both the list page and the edit page cache
+    revalidatePath("/admin/products");
+    revalidatePath(`/admin/products/${params.id}/edit`);
     return NextResponse.json({ success: true });
   } catch (err) {
     const msg = (err as Error).message;
@@ -47,6 +50,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   try {
     await requireAdmin();
     await sql`DELETE FROM products WHERE id = ${params.id}`;
+    // Invalidate the list page after deletion
+    revalidatePath("/admin/products");
     return NextResponse.json({ success: true });
   } catch (err) {
     const msg = (err as Error).message;

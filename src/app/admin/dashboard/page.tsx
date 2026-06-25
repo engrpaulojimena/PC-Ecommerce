@@ -1,8 +1,7 @@
+export const dynamic = "force-dynamic";
 import { sql } from "@/lib/db";
 import { formatPrice } from "@/lib/types";
 import CloudinaryMigrate from "@/components/CloudinaryMigrate";
-
-export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const [{ count: totalProducts }] = await sql`SELECT COUNT(*)::int AS count FROM products`;

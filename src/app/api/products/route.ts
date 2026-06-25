@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   const products = await sql`
@@ -25,6 +26,8 @@ export async function POST(req: NextRequest) {
       VALUES (${name}, ${description ?? null}, ${price}, ${stock ?? 0}, ${category_id ?? null}, ${imageVal})
       RETURNING *
     `;
+    // Invalidate the admin products page cache so next visit is fresh
+    revalidatePath("/admin/products");
     return NextResponse.json({ product });
   } catch (err) {
     const msg = (err as Error).message;

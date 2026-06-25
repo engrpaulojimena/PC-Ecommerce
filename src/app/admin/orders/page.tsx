@@ -1,10 +1,12 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+
 import { sql } from "@/lib/db";
 import { formatPrice } from "@/lib/types";
 import AdminOrderStatus from "@/components/AdminOrderStatus";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
 
 export default async function AdminOrders() {
   const orders = await sql`SELECT * FROM orders ORDER BY created_at DESC`;
